@@ -1,8 +1,19 @@
 function previousPage(fig)
-    currentChapter = getappdata(fig, 'currentChapter');
-    if isempty(currentChapter)
-        currentChapter = 1;
+    if ~isvalid(fig)
+        disp('Error: La figura no es válida en previousPage');
+        return;
     end
-    setappdata(fig, 'currentChapter', max(currentChapter - 1, 1));
-    chaptersMenu(fig, @classicMenu); % Corregido para pasar @classicMenu
+
+    % Reproducir sonido (para punto 3)
+    playClickSound(fig);
+
+    % Actualizar currentChapter
+    currentChapter = getappdata(fig, 'currentChapter');
+    if currentChapter > 1
+        setappdata(fig, 'currentChapter', currentChapter - 1);
+    end
+
+    % Recuperar previousMenu y llamar a chaptersMenu preservándolo
+    previousMenu = getappdata(fig, 'previousMenu');
+    chaptersMenu(fig, previousMenu);
 end

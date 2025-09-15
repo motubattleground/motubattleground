@@ -17,8 +17,21 @@ function selectFields(fig, chapter)
     screenHeight = getappdata(fig, 'screenHeight');
     images = getappdata(fig, 'images');
     numPlayers = getappdata(fig, 'numPlayers'); % 1, 2 o 4
+    gameMode = getappdata(fig, 'gameMode'); % 'classic' o 'campaign'
     previousMenu = getappdata(fig, 'previousMenu'); % Obtener previousMenu
     setappdata(fig, 'currentChapter', chapter);
+
+    % Inferir gameMode si no está definido
+    if ~ischar(gameMode) || ~ismember(gameMode, {'classic', 'campaign'})
+        if isequal(previousMenu, @campaignMenu) || isequal(previousMenu, @newGameMenu)
+            gameMode = 'campaign';
+            disp('gameMode no definido. Inferido como campaign desde previousMenu.');
+        else
+            gameMode = 'classic';
+            disp(['gameMode no definido. Inferido como classic desde previousMenu=' func2str(previousMenu) '.']);
+        end
+    end
+    disp(['Modo de juego detectado: ' gameMode ', numPlayers: ' num2str(numPlayers)]);
 
     % Limpiar figura
     delete(gca(fig));
@@ -78,7 +91,7 @@ function selectFields(fig, chapter)
 
     if chapter == 1
         fieldNames = {'field1', 'field2', 'field3', 'field4', 'field5', 'field6'};
-        if numPlayers == 1 % Modo nueva partida (1 jugador)
+        if strcmp(gameMode, 'campaign')
             % Columna central: imágenes (no botones)
             for i = 1:numFields
                 fieldName = fieldNames{i};
@@ -105,126 +118,14 @@ function selectFields(fig, chapter)
                 end
             end
 
-            % Columna izquierda: botones campo1_1j_a.png
-            fieldNamesA = {'field1_1j_a', 'field2_1j_a', 'field3_1j_a', 'field4_1j_a', 'field5_1j_a', 'field6_1j_a'};
-            for i = 1:numFields
-                fieldName = fieldNamesA{i};
-                yPos = startY + (numFields-i) * (buttonHeight + spacingY); % Alineado con central
-                try
-                    if isfield(images, fieldName)
-                        uicontrol(fig, 'Style', 'pushbutton', ...
-                            'Position', [leftX, yPos, buttonWidth, buttonHeight], ...
-                            'CData', images.(fieldName), ...
-                            'Callback', @(~, ~) callbackWithSound(fig, @(f) startGame(f, i, 'good'), true), ...
-                            'Tag', ['btnFieldA' num2str(i)]);
-                        disp(['Botón campo ' num2str(i) ' (' fieldName ') cargado en x=' num2str(leftX) ', y=' num2str(yPos)]);
-                    else
-                        disp(['Error: Imagen ' fieldName ' no encontrada. Campos disponibles:']);
-                        disp(fieldnames(images));
-                        uicontrol(fig, 'Style', 'pushbutton', ...
-                            'Position', [leftX, yPos, buttonWidth, buttonHeight], ...
-                            'BackgroundColor', [0.5 0.5 0.5], ...
-                            'Callback', @(~, ~) callbackWithSound(fig, @(f) startGame(f, i, 'good'), true), ...
-                            'Tag', ['btnFieldA' num2str(i)]);
-                    end
-                catch e
-                    disp(['Error al crear botón ' fieldName ': ' e.message]);
-                end
+            % Columna izquierda: botones campo1_1j_a.png para 1 jugador o campo1_2j_a.png para 2 jugadores
+            if numPlayers == 1
+                fieldNamesA = {'field1_1j_a', 'field2_1j_a', 'field3_1j_a', 'field4_1j_a', 'field5_1j_a', 'field6_1j_a'};
+            elseif numPlayers == 2
+                fieldNamesA = {'field1_2j_a', 'field2_2j_a', 'field3_2j_a', 'field4_2j_a', 'field5_2j_a', 'field6_2j_a'};
+            else
+                fieldNamesA = {};
             end
-
-            % Columna derecha: botones campo1_1j_b.png
-            fieldNamesB = {'field1_1j_b', 'field2_1j_b', 'field3_1j_b', 'field4_1j_b', 'field5_1j_b', 'field6_1j_b'};
-            for i = 1:numFields
-                fieldName = fieldNamesB{i};
-                yPos = startY + (numFields-i) * (buttonHeight + spacingY); % Alineado con central
-                try
-                    if isfield(images, fieldName)
-                        uicontrol(fig, 'Style', 'pushbutton', ...
-                            'Position', [rightX, yPos, buttonWidth, buttonHeight], ...
-                            'CData', images.(fieldName), ...
-                            'Callback', @(~, ~) callbackWithSound(fig, @(f) startGame(f, i, 'evil'), true), ...
-                            'Tag', ['btnFieldB' num2str(i)]);
-                        disp(['Botón campo ' num2str(i) ' (' fieldName ') cargado en x=' num2str(rightX) ', y=' num2str(yPos)]);
-                    else
-                        disp(['Error: Imagen ' fieldName ' no encontrada. Campos disponibles:']);
-                        disp(fieldnames(images));
-                        uicontrol(fig, 'Style', 'pushbutton', ...
-                            'Position', [rightX, yPos, buttonWidth, buttonHeight], ...
-                            'BackgroundColor', [0.5 0.5 0.5], ...
-                            'Callback', @(~, ~) callbackWithSound(fig, @(f) startGame(f, i, 'evil'), true), ...
-                            'Tag', ['btnFieldB' num2str(i)]);
-                    end
-                catch e
-                    disp(['Error al crear botón ' fieldName ': ' e.message]);
-                end
-            end
-
-            % Encabezados de columnas
-            headerWidth = 400;
-            headerHeight = 80;
-            try
-                if isfield(images, 'goodSide')
-                    uicontrol(fig, 'Style', 'pushbutton', ...
-                        'Position', [leftX, headerY, headerWidth, headerHeight], ...
-                        'CData', images.goodSide, ...
-                        'Enable', 'inactive', ...
-                        'Tag', 'headerGood');
-                    disp(['Encabezado bandodelbien cargado en x=' num2str(leftX) ', y=' num2str(headerY)]);
-                else
-                    disp('Error: Imagen goodSide no encontrada.');
-                    uicontrol(fig, 'Style', 'pushbutton', ...
-                        'Position', [leftX, headerY, headerWidth, headerHeight], ...
-                        'BackgroundColor', [0.5 0.5 0.5], ...
-                        'Enable', 'inactive', ...
-                        'Tag', 'headerGood');
-                end
-                if isfield(images, 'evilSide')
-                    uicontrol(fig, 'Style', 'pushbutton', ...
-                        'Position', [rightX, headerY, headerWidth, headerHeight], ...
-                        'CData', images.evilSide, ...
-                        'Enable', 'inactive', ...
-                        'Tag', 'headerEvil');
-                    disp(['Encabezado bandodelmal cargado en x=' num2str(rightX) ', y=' num2str(headerY)]);
-                else
-                    disp('Error: Imagen evilSide no encontrada.');
-                    uicontrol(fig, 'Style', 'pushbutton', ...
-                        'Position', [rightX, headerY, headerWidth, headerHeight], ...
-                        'BackgroundColor', [0.5 0.5 0.5], ...
-                        'Enable', 'inactive', ...
-                        'Tag', 'headerEvil');
-                end
-            catch e
-                disp(['Error al crear encabezados: ' e.message]);
-            end
-        elseif numPlayers == 2 % Modo campaña (2 jugadores)
-            % Columna central: imágenes (no botones)
-            for i = 1:numFields
-                fieldName = fieldNames{i};
-                yPos = startY + (numFields-i) * (buttonHeight + spacingY); % Orden inverso
-                try
-                    if isfield(images, fieldName)
-                        uicontrol(fig, 'Style', 'pushbutton', ...
-                            'Position', [startX, yPos, buttonWidth, buttonHeight], ...
-                            'CData', images.(fieldName), ...
-                            'Enable', 'inactive', ...
-                            'Tag', ['imgField' num2str(i)]);
-                        disp(['Imagen campo ' num2str(i) ' (' fieldName ') cargada en y=' num2str(yPos)]);
-                    else
-                        disp(['Error: Imagen ' fieldName ' no encontrada. Campos disponibles:']);
-                        disp(fieldnames(images));
-                        uicontrol(fig, 'Style', 'pushbutton', ...
-                            'Position', [startX, yPos, buttonWidth, buttonHeight], ...
-                            'BackgroundColor', [0.5 0.5 0.5], ...
-                            'Enable', 'inactive', ...
-                            'Tag', ['imgField' num2str(i)]);
-                    end
-                catch e
-                    disp(['Error al crear imagen ' fieldName ': ' e.message]);
-                end
-            end
-
-            % Columna izquierda: botones campo1_2j_a.png (Jugador 1, good)
-            fieldNamesA = {'field1_2j_a', 'field2_2j_a', 'field3_2j_a', 'field4_2j_a', 'field5_2j_a', 'field6_2j_a'};
             for i = 1:numFields
                 fieldName = fieldNamesA{i};
                 yPos = startY + (numFields-i) * (buttonHeight + spacingY); % Alineado con central
@@ -250,8 +151,14 @@ function selectFields(fig, chapter)
                 end
             end
 
-            % Columna derecha: botones campo1_2j_b.png (Jugador 1, evil)
-            fieldNamesB = {'field1_2j_b', 'field2_2j_b', 'field3_2j_b', 'field4_2j_b', 'field5_2j_b', 'field6_2j_b'};
+            % Columna derecha: botones campo1_1j_b.png para 1 jugador o campo1_2j_b.png para 2 jugadores
+            if numPlayers == 1
+                fieldNamesB = {'field1_1j_b', 'field2_1j_b', 'field3_1j_b', 'field4_1j_b', 'field5_1j_b', 'field6_1j_b'};
+            elseif numPlayers == 2
+                fieldNamesB = {'field1_2j_b', 'field2_2j_b', 'field3_2j_b', 'field4_2j_b', 'field5_2j_b', 'field6_2j_b'};
+            else
+                fieldNamesB = {};
+            end
             for i = 1:numFields
                 fieldName = fieldNamesB{i};
                 yPos = startY + (numFields-i) * (buttonHeight + spacingY); % Alineado con central
@@ -314,8 +221,7 @@ function selectFields(fig, chapter)
             catch e
                 disp(['Error al crear encabezados: ' e.message]);
             end
-        else % Modo clásico (2 o 4 jugadores)
-            fieldNames = {'field1', 'field2', 'field3', 'field4', 'field5', 'field6'};
+        elseif strcmp(gameMode, 'classic') % Modo clásico (2 o 4 jugadores)
             for i = 1:numFields
                 fieldName = fieldNames{i};
                 yPos = startY + (numFields-i) * (buttonHeight + spacingY); % Orden inverso

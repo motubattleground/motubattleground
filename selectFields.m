@@ -50,21 +50,22 @@ function selectFields(fig, chapter)
         set(ax, 'Color', [1 1 1]);
     end
 
-    % Título (campos1-6.png para capítulo 1)
+    % Título
     titleWidth = 700; % Según loadResources: 140x700
     titleHeight = 140;
-    titleY = screenHeight - 300; % Como en chaptersMenu
+    titleY = screenHeight - 310; % Ajustado 10 píxeles hacia abajo
     try
-        if isfield(images, 'fields1_6') && chapter == 1
-            scaledTitle = imresize(images.fields1_6, [140, 700]);
+        titleField = ['fields' num2str(getFieldStart(chapter)) '_' num2str(getFieldEnd(chapter))];
+        if isfield(images, titleField) && ismember(chapter, 1:8)
+            scaledTitle = imresize(images.(titleField), [140, 700]);
             uicontrol(fig, 'Style', 'pushbutton', ...
                 'Position', [(screenWidth-titleWidth)/2, titleY, titleWidth, titleHeight], ...
                 'CData', scaledTitle, ...
                 'Enable', 'inactive', ...
                 'Tag', 'titleFields');
-            disp('Título fields1_6 cargado (escalado a 140x700).');
+            disp(['Título ' titleField ' cargado (escalado a 140x700).']);
         else
-            disp('Error: fields1_6 no encontrada o capítulo inválido. Campos disponibles:');
+            disp(['Error: ' titleField ' no encontrada o capítulo inválido. Campos disponibles:']);
             disp(fieldnames(images));
             uicontrol(fig, 'Style', 'pushbutton', ...
                 'Position', [(screenWidth-titleWidth)/2, titleY, titleWidth, titleHeight], ...
@@ -76,21 +77,21 @@ function selectFields(fig, chapter)
         disp(['Error al crear título: ' e.message]);
     end
 
-    % Botones de campos (capítulo 1)
+    % Botones de campos
     buttonWidth = 400; % Según loadResources: 80x400
     buttonHeight = 80;
     spacingY = 10;
     spacingX = 20;
-    numFields = 6; % 6 campos para capítulo 1
+    numFields = getNumFields(chapter); % Número de campos por capítulo
     totalHeight = numFields * buttonHeight + (numFields - 1) * spacingY;
     startX = (screenWidth - buttonWidth) / 2; % Centro
-    startY = (screenHeight - totalHeight - 300) / 2 + 144 - 44 - 44 - 80 + 10 + 30; % y=591 (arriba), y=141 (abajo)
+    startY = (screenHeight - totalHeight - 300) / 2 + 144 - 44 - 44 - 80 + 10 + 30 - 10; % y=581 (arriba, ajustado -10)
     leftX = startX - buttonWidth - spacingX; % Columna izquierda
     rightX = startX + buttonWidth + spacingX; % Columna derecha
-    headerY = startY + (numFields-1) * (buttonHeight + spacingY) + buttonHeight + 10 + 80 - 10 - 30 - 50 + 10; % y=561
+    headerY = startY + (numFields-1) * (buttonHeight + spacingY) + buttonHeight + 10 + 80 - 10 - 30 - 50 + 10 - 10; % y=551
 
-    if chapter == 1
-        fieldNames = {'field1', 'field2', 'field3', 'field4', 'field5', 'field6'};
+    if ismember(chapter, 1:8)
+        fieldNames = getFieldNames(chapter); % Campos por capítulo
         if strcmp(gameMode, 'campaign')
             % Columna central: imágenes (no botones)
             for i = 1:numFields
@@ -118,11 +119,11 @@ function selectFields(fig, chapter)
                 end
             end
 
-            % Columna izquierda: botones campo1_1j_a.png para 1 jugador o campo1_2j_a.png para 2 jugadores
+            % Columna izquierda: botones campoX_1j_a.png o campoX_2j_a.png
             if numPlayers == 1
-                fieldNamesA = {'field1_1j_a', 'field2_1j_a', 'field3_1j_a', 'field4_1j_a', 'field5_1j_a', 'field6_1j_a'};
+                fieldNamesA = cellfun(@(x) [x '_1j_a'], fieldNames, 'UniformOutput', false);
             elseif numPlayers == 2
-                fieldNamesA = {'field1_2j_a', 'field2_2j_a', 'field3_2j_a', 'field4_2j_a', 'field5_2j_a', 'field6_2j_a'};
+                fieldNamesA = cellfun(@(x) [x '_2j_a'], fieldNames, 'UniformOutput', false);
             else
                 fieldNamesA = {};
             end
@@ -151,11 +152,11 @@ function selectFields(fig, chapter)
                 end
             end
 
-            % Columna derecha: botones campo1_1j_b.png para 1 jugador o campo1_2j_b.png para 2 jugadores
+            % Columna derecha: botones campoX_1j_b.png o campoX_2j_b.png
             if numPlayers == 1
-                fieldNamesB = {'field1_1j_b', 'field2_1j_b', 'field3_1j_b', 'field4_1j_b', 'field5_1j_b', 'field6_1j_b'};
+                fieldNamesB = cellfun(@(x) [x '_1j_b'], fieldNames, 'UniformOutput', false);
             elseif numPlayers == 2
-                fieldNamesB = {'field1_2j_b', 'field2_2j_b', 'field3_2j_b', 'field4_2j_b', 'field5_2j_b', 'field6_2j_b'};
+                fieldNamesB = cellfun(@(x) [x '_2j_b'], fieldNames, 'UniformOutput', false);
             else
                 fieldNamesB = {};
             end
@@ -278,4 +279,100 @@ function startGame(fig, field, side1, side2)
     end
     disp(['Iniciando juego con campo ' num2str(field) ', bando Jugador 1: ' side1 ', bando Jugador 2: ' side2 ', y ' num2str(getappdata(fig, 'numPlayers')) ' jugadores']);
     % Aquí iría la lógica para cargar el mapa del campo y configurar los bandos
+end
+
+function numFields = getNumFields(chapter)
+    % Devuelve el número de campos por capítulo
+    switch chapter
+        case 1
+            numFields = 6; % Campos 1-6
+        case 2
+            numFields = 7; % Campos 7-13
+        case 3
+            numFields = 6; % Campos 14-19
+        case 4
+            numFields = 6; % Campos 20-25
+        case 5
+            numFields = 4; % Campos 26-29
+        case 6
+            numFields = 2; % Campos 30-31
+        case 7
+            numFields = 4; % Campos 32-35
+        case 8
+            numFields = 2; % Campos 36-37
+        otherwise
+            numFields = 0;
+    end
+end
+
+function fieldNames = getFieldNames(chapter)
+    % Devuelve los nombres de los campos por capítulo
+    switch chapter
+        case 1
+            fieldNames = {'field1', 'field2', 'field3', 'field4', 'field5', 'field6'};
+        case 2
+            fieldNames = {'field7', 'field8', 'field9', 'field10', 'field11', 'field12', 'field13'};
+        case 3
+            fieldNames = {'field14', 'field15', 'field16', 'field17', 'field18', 'field19'};
+        case 4
+            fieldNames = {'field20', 'field21', 'field22', 'field23', 'field24', 'field25'};
+        case 5
+            fieldNames = {'field26', 'field27', 'field28', 'field29'};
+        case 6
+            fieldNames = {'field30', 'field31'};
+        case 7
+            fieldNames = {'field32', 'field33', 'field34', 'field35'};
+        case 8
+            fieldNames = {'field36', 'field37'};
+        otherwise
+            fieldNames = {};
+    end
+end
+
+function fieldStart = getFieldStart(chapter)
+    % Devuelve el primer campo del capítulo
+    switch chapter
+        case 1
+            fieldStart = 1;
+        case 2
+            fieldStart = 7;
+        case 3
+            fieldStart = 14;
+        case 4
+            fieldStart = 20;
+        case 5
+            fieldStart = 26;
+        case 6
+            fieldStart = 30;
+        case 7
+            fieldStart = 32;
+        case 8
+            fieldStart = 36;
+        otherwise
+            fieldStart = 0;
+    end
+end
+
+function fieldEnd = getFieldEnd(chapter)
+    % Devuelve el último campo del capítulo
+    switch chapter
+        case 1
+            fieldEnd = 6;
+        case 2
+            fieldEnd = 13;
+        case 3
+            fieldEnd = 19;
+        case 4
+            fieldEnd = 25;
+        case 5
+            fieldEnd = 29;
+        case 6
+            fieldEnd = 31;
+        case 7
+            fieldEnd = 35;
+        case 8
+            fieldEnd = 37;
+        otherwise
+            fieldEnd = 0;
+    end
 end

@@ -39,7 +39,7 @@ function chaptersMenu(fig, previousMenu)
     currentChapter = getappdata(fig, 'currentChapter');
     if isempty(currentChapter)
         currentChapter = 1;
-        setappdata(fig, 'currentChapter', currentChapter);
+        setappdata(fig, 'current', currentChapter);
     end
     buttonWidth = 400;
     buttonHeight = 400;
@@ -90,7 +90,7 @@ function chaptersMenu(fig, previousMenu)
         btnPrevious = uicontrol(fig, 'Style', 'pushbutton', ...
             'Position', [(screenWidth-pageImageWidth)/2 - pageButtonWidth - spacingX, pageImageY, pageButtonWidth, pageButtonHeight], ...
             'CData', images.previous, ...
-            'Callback', @(~, ~) previousPage(fig), ...
+            'Callback', @(~, ~) callbackWithSound(fig, @(f) previousPage(f), true), ... % Añadido callbackWithSound para sfx_click.mp3
             'Tag', 'btnPrevious');
     end
 
@@ -98,7 +98,7 @@ function chaptersMenu(fig, previousMenu)
         btnNext = uicontrol(fig, 'Style', 'pushbutton', ...
             'Position', [(screenWidth+pageImageWidth)/2 + spacingX, pageImageY, pageButtonWidth, pageButtonHeight], ...
             'CData', images.next, ...
-            'Callback', @(~, ~) nextPage(fig), ...
+            'Callback', @(~, ~) callbackWithSound(fig, @(f) nextPage(f), true), ... # Añadido callbackWithSound para sfx_click.mp3
             'Tag', 'btnNext');
     end
 

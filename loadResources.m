@@ -1,6 +1,8 @@
 function [images, audio] = loadResources()
     % Define paths
     background = 'images\bkg_intro.jpg';
+    erial = 'images\battlegrounds\campo_erial.png';
+    preternia = 'images\battlegrounds\campo_preternia.png';
     button1 = 'images\buttons\modocamp.png';
     button2 = 'images\buttons\modoclasico.png';
     skipbutton = 'images\buttons\saltar.png';
